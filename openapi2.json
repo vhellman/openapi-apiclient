@@ -240,102 +240,96 @@
       }
     },
     "components": {
-      "schemas": {
-        "User": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "example": "123"
-            },
-            "username": {
-              "type": "string",
-              "example": "johndoe"
-            },
-            "email": {
-              "type": "string",
-              "example": "johndoe@example.com"
-            },
-            "createdAt": {
-              "type": "string",
-              "format": "date-time",
-              "example": "2024-09-16T14:20:00Z"
-            }
-          }
+  "schemas": {
+    "User": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "example": "123"
         },
-        "NewUser": {
-          "type": "object",
-          "properties": {
-            "username": {
-              "type": "string",
-              "example": "johndoe"
-            },
-            "email": {
-              "type": "string",
-              "example": "johndoe@example.com"
-            },
-            "password": {
-              "type": "string",
-              "example": "password123"
-            }
-          },
-          "required": ["username", "email", "password"]
+        "username": {
+          "type": "string",
+          "example": "johndoe"
         },
-        "UpdateUser": {
-          "type": "object",
-          "properties": {
-            "email": {
-              "type": "string",
-              "example": "newemail@example.com"
-            },
-            "password": {
-              "type": "string",
-              "example": "newpassword123"
-            }
-          }
+        "email": {
+          "type": "string",
+          "example": "johndoe@example.com"
         },
-        "LoginRequest": {
-          "type": "object",
-          "properties": {
-            "username": {
-              "type": "string",
-              "example": "johndoe"
-            },
-            "password": {
-              "type": "string",
-              "example": "password123"
-            }
-          },
-          "required": ["username", "password"]
-        },
-        "LoginResponse": {
-          "type": "object",
-          "properties": {
-            "token": {
-              "type": "string",
-              "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-            },
-            "expiresIn": {
-              "type": "integer",
-              "example": 3600
-            }
-          }
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2024-09-16T14:20:00Z"
         }
       }
     },
-    "security": [
-      {
-        "bearerAuth": []
+    "NewUser": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "example": "johndoe"
+        },
+        "email": {
+          "type": "string",
+          "example": "johndoe@example.com"
+        },
+        "password": {
+          "type": "string",
+          "example": "password123"
+        }
+      },
+      "required": ["username", "email", "password"]
+    },
+    "UpdateUser": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "example": "newemail@example.com"
+        },
+        "password": {
+          "type": "string",
+          "example": "newpassword123"
+        }
       }
-    ],
-    "components": {
-      "securitySchemes": {
-        "bearerAuth": {
-          "type": "http",
-          "scheme": "bearer",
-          "bearerFormat": "JWT"
+    },
+    "LoginRequest": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "example": "johndoe"
+        },
+        "password": {
+          "type": "string",
+          "example": "password123"
+        }
+      },
+      "required": ["username", "password"]
+    },
+    "LoginResponse": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string",
+          "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        },
+        "expiresIn": {
+          "type": "integer",
+          "example": 3600
         }
       }
     }
+  },
+  "securitySchemes": {
+    "bearerAuth": {
+      "type": "http",
+      "scheme": "bearer",
+      "bearerFormat": "JWT"
+    }
+  }
+}
+
   }
   
