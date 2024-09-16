@@ -1,0 +1,24 @@
+{
+	"name": "openapigenerator",
+	"version": "1.0.0",
+	"description": "",
+	"main": "openapigenerator.ts",
+	"type": "module",
+	"scripts": {
+		"generate-api": "ts-node openapigeneration.ts -u http://localhost:8080/v3/api-docs -o ./_gen",
+		"generate-api:file": "ts-node ./openapigenerator2.ts -i ./openapi.json -o ./_gen"
+	},
+	"dependencies": {
+		"node-fetch": "^3.3.2",
+		"yargs": "^17.7.2",
+		"zod": "^3.23.8"
+	},
+	"devDependencies": {
+		"@types/yargs": "^17.0.33",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.6.2"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC"
+}
