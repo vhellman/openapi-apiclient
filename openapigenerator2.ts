@@ -4,12 +4,14 @@ import fetch from 'node-fetch';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { generateSchemasFile } from './generateSchemas';
+import { OpenAPIV3 } from 'openapi-types';
 
-  interface Arguments {
-    input: string;
-    output: string;
-  }
-  const argv = yargs(hideBin(process.argv))
+interface Arguments {
+  input: string;
+  output: string;
+}
+
+const argv = yargs(hideBin(process.argv))
   .option('input', {
     alias: 'i',
     description: 'The URL or file path to the OpenAPI specification',
@@ -26,33 +28,14 @@ import { generateSchemasFile } from './generateSchemas';
   .alias('help', 'h')
   .parse() as Arguments;
 
-// Types for OpenAPI Specification
-interface OpenAPISpec {
-  paths: Record<string, PathMethods>;
-}
-
-interface PathMethods {
-  [method: string]: Operation;
-}
-
-interface Operation {
-  parameters?: Parameter[];
-  requestBody?: unknown;
-}
-
-interface Parameter {
-  in: string;
-  name: string;
-}
-
 // Function to fetch OpenAPI specification from a URL
-async function fetchOpenAPISpec(url: string): Promise<OpenAPISpec> {
+async function fetchOpenAPISpec(url: string): Promise<OpenAPIV3.Document> {
   try {
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Failed to fetch OpenAPI spec: ${response.statusText}`);
     }
-    return( await response.json()) as OpenAPISpec;
+    return await response.json() as OpenAPIV3.Document;
   } catch (error) {
     console.error('Error fetching OpenAPI spec:', error);
     process.exit(1);
@@ -60,7 +43,7 @@ async function fetchOpenAPISpec(url: string): Promise<OpenAPISpec> {
 }
 
 // Function to read OpenAPI specification from a local file
-async function readOpenAPISpecFromFile(filePath: string): Promise<OpenAPISpec> {
+function readOpenAPISpecFromFile(filePath: string): OpenAPIV3.Document {
   try {
     const fileContent = fs.readFileSync(filePath, 'utf-8');
     return JSON.parse(fileContent);
@@ -168,76 +151,89 @@ export const apiClient = new ApiClient({ baseUrl: '' }); // Base URL will be set
 `;
 }
 
-// Function to generate the routes.api.ts content
-function generateRoutesContent(spec: OpenAPISpec, baseUrl: string): string {
-  const functions: string[] = [];
-  functions.push(`import { apiClient } from './client';\n`);
-
-  for (const [path, methods] of Object.entries(spec.paths)) {
-    const relativePath = path.replace(baseUrl, '');  // Remove the base path dynamically
-    for (const [method, operation] of Object.entries(methods as PathMethods)) {
-      const functionName = `${method.toLowerCase()}${capitalizeCamelCase(relativePath)}`;
-      const params = operation.parameters?.filter((p: Parameter) => p.in === 'path').map((p: Parameter) => p.name) || [];
-      const hasRequestBody = !!operation.requestBody;
-
-      let functionDefinition = `export async function ${functionName}(`;
-      if (params.length > 0) {
-        functionDefinition += params.join(', ') + (hasRequestBody ? ', ' : '');
-      }
-      if (hasRequestBody) {
-        functionDefinition += 'requestBody: any';
-      }
-      functionDefinition += `): Promise<any> {`;
-      functions.push(functionDefinition);
-
-      let apiPath = `'${relativePath}'`;
-      if (params.length > 0) {
-        apiPath = '`' + relativePath.replace(/{/g, '${') + '`';
-      }
-
-      if (hasRequestBody) {
-        functions.push(`  return apiClient.${method.toLowerCase()}(${apiPath}, requestBody);`);
-      } else {
-        functions.push(`  return apiClient.${method.toLowerCase()}(${apiPath});`);
-      }
-      functions.push(`}\n`);
-    }
+// Function to parse OpenAPI spec
+async function parseOpenAPISpec(input: string): Promise<OpenAPIV3.Document> {
+  if (isUrl(input)) {
+    return await fetchOpenAPISpec(input);
+  } else {
+    return readOpenAPISpecFromFile(input);
   }
-
-  return functions.join('\n');
 }
 
-function capitalizeCamelCase(str: string): string {
-  return str
-    .replace(/^\//, '') // Remove leading slash
-    .replace(/{([^}]+)}/g, '$1') // Remove curly braces from path parameters
-    .split(/[^a-zA-Z0-9]+/) // Split on non-alphanumeric characters
-    .map((part, index) => 
-      part.charAt(0).toUpperCase() + part.slice(1) // Capitalize first letter of each part
-    )
-    .join('');
+function generateApiFunctions(spec: OpenAPIV3.Document): string {
+  const paths = Object.keys(spec.paths);
+  const BASE_URL = extractCommonBasePath(paths);
+  
+  console.log(`Extracted BASE_URL: ${BASE_URL}`);
+
+  let functionsCode = `import { OpenAPIV3 } from 'openapi-types';\n\n`;
+  functionsCode += `export const BASE_URL = '${BASE_URL}';\n\n`;
+
+  Object.entries(spec.paths).forEach(([path, pathItem]) => {
+    const relativePath = path.slice(BASE_URL.length);
+    
+    Object.entries(pathItem as OpenAPIV3.PathItemObject).forEach(([method, operation]) => {
+      if (['get', 'post', 'put', 'delete', 'patch'].includes(method)) {
+        const operationObject = operation as OpenAPIV3.OperationObject;
+        const operationId = operationObject.operationId || `${method}${relativePath.replace(/\W+/g, '_')}`;
+        
+        functionsCode += `export async function ${operationId}(params: any = {}, body?: any): Promise<any> {
+          let url = \`${BASE_URL}${relativePath}\`;
+          
+          // Replace path parameters
+          url = url.replace(/{(\w+)}/g, (_, key) => encodeURIComponent(params[key]));
+          
+          const queryParams = ${JSON.stringify(operationObject.parameters?.filter(
+            (p): p is OpenAPIV3.ParameterObject => p.in === 'query'
+          ) || [])};
+          
+          const queryString = queryParams
+            .map(p => \`\${p.name}=\${encodeURIComponent(params[p.name] || '')}\`)
+            .join('&');
+          
+          if (queryString) {
+            url += \`?\${queryString}\`;
+          }
+          
+          const options: RequestInit = {
+            method: '${method.toUpperCase()}',
+            headers: {
+              'Content-Type': 'application/json',
+              ...params.headers,
+            },
+          };
+          
+          if (body) {
+            options.body = JSON.stringify(body);
+          }
+          
+          const response = await fetch(url, options);
+          
+          if (!response.ok) {
+            throw new Error(\`HTTP error! Status: \${response.status}\`);
+          }
+          
+          return response.json();
+        }\n\n`;
+      }
+    });
+  });
+
+  return functionsCode;
 }
 
+// Modify the main function
 async function main() {
   const { input, output } = argv;
 
-  // Determine if the input is a URL or a file path
-  let spec: OpenAPISpec;
-  if (isUrl(input as string)) {
-    spec = await fetchOpenAPISpec(input as string);
-  } else {
-    spec = await readOpenAPISpecFromFile(input as string);
-  }
-
-  // Determine the common base path
-  const baseUrl = extractCommonBasePath(Object.keys(spec.paths));
+  const spec = await parseOpenAPISpec(input);
 
   // Generate content for client.ts and routes.api.ts
   const clientContent = generateClientContent();
-  const routesContent = generateRoutesContent(spec, baseUrl);
+  const routesContent = generateApiFunctions(spec);
 
   // Create output directory if it does not exist
-  const outputDir = path.resolve(process.cwd(), output as string);
+  const outputDir = path.resolve(process.cwd(), output);
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }

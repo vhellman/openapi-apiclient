@@ -8,6 +8,6 @@
       "strict": true,
       "outDir": "./dist"
     },
-    "include": ["./**/*.ts"]
+    "include": ["./**/*.ts", "openapigenerator"]
   }
   
