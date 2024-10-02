@@ -1,6 +1,6 @@
 {
   "name": "openapi-client-generator",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Generates zod schemas and type types for a OpenAPI specification",
   "main": "dist/main.js",
   "types": "dist/index.d.ts",
@@ -10,7 +10,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "start": "pnpm run build && node dist/main.js -i http://localhost:8080/v3/api-docs -o ./output-dir"
+    "start": "pnpm run build && node dist/main.js -i http://localhost:8080/v3/api-docs -o ./__generated__"
   },
   "repository": {
     "type": "git",
@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "node-fetch": "^3.3.2",
-    "yargs": "^17.7.2"
+    "yargs": "^17.7.2",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/yargs": "^17.0.33",
