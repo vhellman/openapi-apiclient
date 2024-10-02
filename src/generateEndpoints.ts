@@ -1,4 +1,5 @@
 import { OpenAPIV3 } from "openapi-types";
+import zod from "zod";
 
 function generateOperationId(method: string, path: string): string {
   const parts = path.split("/").filter(Boolean);
@@ -17,10 +18,16 @@ function getSchemaType(
   if (!schema) return "void";
   if ("$ref" in schema) {
     const refParts = schema.$ref.split("/");
-    return refParts[refParts.length - 1];
+    return `Schemas.${refParts[refParts.length - 1]}`;
   } else if (schema.type === "array" && schema.items) {
     return `${getSchemaType(schema.items)}[]`;
   } else if (schema.type === "object") {
+    if (schema.additionalProperties) {
+      const valueType = getSchemaType(
+        schema.additionalProperties as OpenAPIV3.SchemaObject
+      );
+      return `Record<string, ${valueType}>`;
+    }
     return "Record<string, any>";
   } else if (
     schema.type === "string" ||
@@ -125,21 +132,13 @@ export function generateEndpoints(
             );
           }
           if (["post", "put", "patch"].includes(method)) {
-            params.push(
-              `body: ${
-                requestBodyType === "any" ? "any" : `Schemas.${requestBodyType}`
-              }`
-            );
+            params.push(`body: ${requestBodyType}`);
           }
           params.push("options: RequestOptions");
 
           functionsCode += params.join(", ");
 
-          functionsCode += `): Promise<ApiResponse<${
-            responseType === "any" || responseType === "void"
-              ? responseType
-              : `Schemas.${responseType}`
-          }>> {\n`;
+          functionsCode += `): Promise<ApiResponse<${responseType}>> {\n`;
 
           // Construct the URL template
           let urlTemplate = `\`${relativePath.replace(/{/g, "${")}\``;
@@ -152,11 +151,7 @@ export function generateEndpoints(
           }
 
           // Construct the apiClient call
-          functionsCode += `  return apiClient.${method}<${
-            responseType === "any" || responseType === "void"
-              ? responseType
-              : `Schemas.${responseType}`
-          }>(${urlTemplate}`;
+          functionsCode += `  return apiClient.${method}<${responseType}>(${urlTemplate}`;
           if (["post", "put", "patch"].includes(method)) {
             functionsCode += `, body`;
           }
