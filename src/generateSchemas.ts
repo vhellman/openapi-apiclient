@@ -1,5 +1,4 @@
 import { OpenAPIV3 } from "openapi-types";
-import { z } from "zod";
 
 function generateZodSchemas(spec: OpenAPIV3.Document): string {
   const components = spec.components?.schemas || {};

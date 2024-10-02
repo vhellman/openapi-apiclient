@@ -1,0 +1,5 @@
+tests/
+docs/
+node_modules/
+src/
+dist/*.map

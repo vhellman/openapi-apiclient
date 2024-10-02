@@ -3,11 +3,13 @@
     "target": "ES2020",
     "module": "ES2020",
     "moduleResolution": "node",
+    "declaration": true, // Generate `.d.ts` files for type definitions
+    "sourceMap": true, // Generate source maps for debugging
     "esModuleInterop": true,
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "**/*.spec.ts"]
+  "exclude": ["node_modules", "**/*.spec.ts, dist"]
 }
