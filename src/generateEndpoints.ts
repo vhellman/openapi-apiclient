@@ -12,19 +12,36 @@ function generateOperationId(method: string, path: string): string {
   return method + camelCaseParts.join("");
 }
 
+function isSchemaObject(
+  schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject
+): schema is OpenAPIV3.SchemaObject {
+  return !("$ref" in schema);
+}
+
 function getSchemaType(
-  schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject | undefined
+  schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject | undefined,
+  contentType?: string
 ): string {
   if (!schema) return "void";
   if ("$ref" in schema) {
     const refParts = schema.$ref.split("/");
     return `Schemas.${refParts[refParts.length - 1]}`;
+  } else if (schema.type === "string" && schema.format === "binary") {
+    return "Blob";
   } else if (schema.type === "array" && schema.items) {
-    return `${getSchemaType(schema.items)}[]`;
+    if (isSchemaObject(schema.items)) {
+      if (schema.items.type === "string" && schema.items.format === "byte") {
+        return "Blob";
+      }
+    }
+    return `${getSchemaType(schema.items, contentType)}[]`;
   } else if (schema.type === "object") {
     if (schema.additionalProperties) {
       const valueType = getSchemaType(
-        schema.additionalProperties as OpenAPIV3.SchemaObject
+        schema.additionalProperties as
+          | OpenAPIV3.SchemaObject
+          | OpenAPIV3.ReferenceObject,
+        contentType
       );
       return `Record<string, ${valueType}>`;
     }
@@ -43,19 +60,30 @@ function getResponseType(responses: OpenAPIV3.ResponsesObject): string {
   const successResponses = ["200", "201", "204"];
   for (const status of successResponses) {
     const response = responses[status];
-    if (response) {
-      if ("content" in response) {
-        const content = response.content;
-        if (content && "application/json" in content) {
-          const schema = content["application/json"].schema;
+    if (response && "content" in response) {
+      const content = response.content;
+      if (content) {
+        if (
+          "application/pdf" in content ||
+          "application/octet-stream" in content
+        ) {
+          const schema =
+            content["application/pdf"]?.schema ||
+            content["application/octet-stream"]?.schema;
           if (schema) {
-            return getSchemaType(schema);
+            return getSchemaType(schema, "application/pdf");
           }
         }
-      } else {
-        // For responses without content (e.g., 204 No Content)
-        return "void";
+        if ("application/json" in content) {
+          const schema = content["application/json"].schema;
+          if (schema) {
+            return getSchemaType(schema, "application/json");
+          }
+        }
       }
+    } else if (response) {
+      // For responses without content (e.g., 204 No Content)
+      return "void";
     }
   }
   return "any";
@@ -69,10 +97,24 @@ function getRequestBodyType(
 ): string {
   if (requestBody && "content" in requestBody) {
     const content = requestBody.content;
-    if (content && "application/json" in content) {
-      const schema = content["application/json"].schema;
-      if (schema) {
-        return getSchemaType(schema);
+    if (content) {
+      if ("application/octet-stream" in content) {
+        const schema = content["application/octet-stream"].schema;
+        if (schema) {
+          return getSchemaType(schema, "application/octet-stream");
+        }
+      }
+      if ("application/pdf" in content) {
+        const schema = content["application/pdf"].schema;
+        if (schema) {
+          return getSchemaType(schema, "application/pdf");
+        }
+      }
+      if ("application/json" in content) {
+        const schema = content["application/json"].schema;
+        if (schema) {
+          return getSchemaType(schema, "application/json");
+        }
       }
     }
   }
