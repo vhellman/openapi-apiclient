@@ -2,3 +2,4 @@
 /dist
 /__generated__
 .npmrc
+__*/**

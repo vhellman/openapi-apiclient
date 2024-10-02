@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/username/repository.git"
+    "url": "https://github.com/vhellman/openapi-apiclient"
   },
   "dependencies": {
     "node-fetch": "^3.3.2",
