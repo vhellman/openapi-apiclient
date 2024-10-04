@@ -32,10 +32,10 @@ function generateZodSchemas(spec: OpenAPIV3.Document): string {
   }
 
   return `
-import { z } from 'zod';
+  import { z } from 'zod';
 
-${schemaDefinitions.join("\n\n")}
-`;
+  ${schemaDefinitions.join("\n\n")}
+  `;
 }
 
 function getImmediateDependencies(
@@ -96,32 +96,49 @@ function getImmediateDependencies(
 }
 
 function topologicalSort(graph: { [key: string]: Set<string> }): string[] {
-  const visited = new Set<string>();
-  const sorted: string[] = [];
-  const temp = new Set<string>();
-
-  function visit(node: string) {
-    if (visited.has(node)) {
-      return;
+  // Based on Kahn's algorithm
+  const inDegree = new Map<string, number>();
+  const queue: string[] = [];
+  const result: string[] = [];
+  
+  // Initialize in-degree for all nodes
+  for (const node in graph) {
+    if (!inDegree.has(node)) {
+      inDegree.set(node, 0);
     }
-    if (temp.has(node)) {
-      throw new Error("Circular dependency detected: " + node);
-    }
-    temp.add(node);
-    for (const dep of graph[node] || []) {
-      visit(dep);
-    }
-    temp.delete(node);
-    visited.add(node);
-    sorted.unshift(node);
-  }
-
-  for (const node of Object.keys(graph)) {
-    if (!visited.has(node)) {
-      visit(node);
+    for (const neighbor of graph[node]) {
+      inDegree.set(neighbor, (inDegree.get(neighbor) || 0) + 1);
     }
   }
-  return sorted.reverse(); // reverse to get correct order
+    
+  // Find all nodes with in-degree 0
+  inDegree.forEach((degree, node) => {
+    if (degree === 0) queue.push(node);
+  });
+  
+  // Process the queue
+  while (queue.length > 0) {
+    const node = queue.pop()!;
+    result.push(node);
+    
+    const neighbors = graph[node];
+    if (neighbors) {
+      for (const neighbor of neighbors) {
+        const newDegree = inDegree.get(neighbor)! - 1;
+        if (newDegree === 0) {
+          queue.push(neighbor);
+        }
+        inDegree.set(neighbor, newDegree);
+      }
+    }
+  }
+    
+  // Check for cycles
+  if (result.length !== Object.keys(graph).length) {
+    throw new Error("Circular dependency detected");
+  }
+  
+  return result;
 }
 
 function convertToZodSchema(
