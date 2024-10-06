@@ -1,5 +1,4 @@
 import { OpenAPIV3 } from "openapi-types";
-import zod from "zod";
 
 function generateOperationId(method: string, path: string): string {
   const parts = path.split("/").filter(Boolean);
