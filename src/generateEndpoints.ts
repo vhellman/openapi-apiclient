@@ -56,36 +56,40 @@ function getSchemaType(
 }
 
 function getResponseType(responses: OpenAPIV3.ResponsesObject): string {
-  const successResponses = ["200", "201", "204"];
-  for (const status of successResponses) {
-    const response = responses[status];
-    if (response && "content" in response) {
-      const content = response.content;
-      if (content) {
-        if (
-          "application/pdf" in content ||
-          "application/octet-stream" in content
-        ) {
-          const schema =
-            content["application/pdf"]?.schema ||
-            content["application/octet-stream"]?.schema;
-          if (schema) {
-            return getSchemaType(schema, "application/pdf");
-          }
-        }
-        if ("application/json" in content) {
-          const schema = content["application/json"].schema;
-          if (schema) {
-            return getSchemaType(schema, "application/json");
-          }
+  const successResponses = new Set(["200", "201", "204"]);
+  
+  for (const [status, response] of Object.entries(responses)) {
+    if (!successResponses.has(status) || !response){
+      continue;
+    } 
+
+    if (typeof response !== 'object' || response === null) {
+      continue;
+    }
+
+    if (!('content' in response) || !response.content) {
+      return 'void';
+    }
+
+    const content = response.content;
+    const supportedTypes = [
+      'application/pdf',
+      'application/octet-stream',
+      'application/json'
+    ] as const;
+
+    for (const type of supportedTypes) {
+      const schemaContent = content[type];
+      if (schemaContent && 'schema' in schemaContent) {
+        const schema = schemaContent.schema;
+        if (schema) {
+          return getSchemaType(schema, type);
         }
       }
-    } else if (response) {
-      // For responses without content (e.g., 204 No Content)
-      return "void";
     }
   }
-  return "any";
+
+  return 'any';
 }
 
 function getRequestBodyType(
