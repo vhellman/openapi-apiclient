@@ -1,5 +1,4 @@
 import { OpenAPIV3 } from "openapi-types";
-import zod from "zod";
 
 function generateZodSchemas(spec: OpenAPIV3.Document): string {
   const components = spec.components?.schemas || {};
@@ -7,7 +6,7 @@ function generateZodSchemas(spec: OpenAPIV3.Document): string {
 
   const dependencyGraph: { [key: string]: Set<string> } = {};
 
-  // Build dependency graph with immediate dependencies
+  // build dependency graph with immediate dependencies
   for (const [name, schema] of Object.entries(components)) {
     const dependencies = getImmediateDependencies(
       schema as OpenAPIV3.SchemaObject
@@ -15,11 +14,12 @@ function generateZodSchemas(spec: OpenAPIV3.Document): string {
     dependencyGraph[name] = dependencies;
   }
 
-  // Perform topological sort
-  const sortedSchemaNames = topologicalSort(dependencyGraph);
+  // sort schemas so that dependencies come before dependents
+  const sortedSchemaNames = topologicalSort2(dependencyGraph);
+  const reversedSchemaNames = sortedSchemaNames.reverse();
 
-  // Now generate schemas in sorted order
-  for (const name of sortedSchemaNames) {
+  // generate Zod schemas with infered types
+  for (const name of reversedSchemaNames) {
     const schema = components[name];
     const zodSchema = convertToZodSchema(
       schema as OpenAPIV3.SchemaObject,
@@ -95,7 +95,7 @@ function getImmediateDependencies(
   return dependencies;
 }
 
-function topologicalSort(graph: { [key: string]: Set<string> }): string[] {
+export function topologicalSort(graph: { [key: string]: Set<string> }): string[] {
   const visited = new Set<string>();
   const sorted: string[] = [];
   const temp = new Set<string>();
@@ -121,8 +121,57 @@ function topologicalSort(graph: { [key: string]: Set<string> }): string[] {
       visit(node);
     }
   }
-  return sorted.reverse(); // reverse to get correct order
+  return sorted; 
 }
+
+
+export function topologicalSort2(graph: { [key: string]: Set<string> }): string[] {
+  // Based on Kahn's algorithm
+  const inDegree = new Map<string, number>();
+  const queue: string[] = [];
+  const result: string[] = [];
+  
+  // Initialize in-degree for all nodes
+  for (const node in graph) {
+    if (!inDegree.has(node)) {
+      inDegree.set(node, 0);
+    }
+    for (const neighbor of graph[node]) {
+      inDegree.set(neighbor, (inDegree.get(neighbor) || 0) + 1);
+    }
+  }
+    
+  // Find all nodes with in-degree 0
+  inDegree.forEach((degree, node) => {
+    if (degree === 0) queue.push(node);
+  });
+  
+  // Process the queue
+  while (queue.length > 0) {
+    const node = queue.pop()!;
+    result.push(node);
+    
+    const neighbors = graph[node];
+    if (neighbors) {
+      for (const neighbor of neighbors) {
+        const newDegree = inDegree.get(neighbor)! - 1;
+        if (newDegree === 0) {
+          queue.push(neighbor);
+        }
+        inDegree.set(neighbor, newDegree);
+      }
+    }
+  }
+    
+  // Check for cycles
+  if (result.length !== Object.keys(graph).length) {
+    throw new Error("Circular dependency detected");
+  }
+  
+  return result;
+}
+
+
 
 function convertToZodSchema(
   schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject,

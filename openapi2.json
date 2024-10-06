@@ -1,335 +1,479 @@
 {
-    "openapi": "3.0.0",
-    "info": {
-      "title": "Complex Example API",
-      "description": "A more complex example API to demonstrate OpenAPI capabilities.",
-      "version": "1.1.0"
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Advanced Example API",
+    "description": "An advanced example API with complex schema references.",
+    "version": "2.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com/v2",
+      "description": "Production Server"
     },
-    "servers": [
-      {
-        "url": "https://api.example.com",
-        "description": "Production Server"
-      },
-      {
-        "url": "https://staging-api.example.com",
-        "description": "Staging Server"
-      }
-    ],
-    "paths": {
-      "/api/v2/users": {
-        "get": {
-          "summary": "Get list of users",
-          "description": "Fetch a list of all users in the system.",
-          "parameters": [
-            {
-              "name": "page",
-              "in": "query",
-              "description": "Page number for pagination",
-              "required": false,
-              "schema": {
-                "type": "integer",
-                "example": 1
-              }
-            },
-            {
-              "name": "limit",
-              "in": "query",
-              "description": "Number of users per page",
-              "required": false,
-              "schema": {
-                "type": "integer",
-                "example": 10
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "A list of users.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/User"
-                    }
-                  }
-                }
-              }
-            },
-            "500": {
-              "description": "Internal server error"
-            }
+    {
+      "url": "https://staging-api.example.com/v2",
+      "description": "Staging Server"
+    }
+  ],
+  "paths": {
+    "/users": {
+      "get": {
+        "summary": "Get list of users",
+        "description": "Fetch a list of all users in the system.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageParam"
+          },
+          {
+            "$ref": "#/components/parameters/LimitParam"
           }
-        },
-        "post": {
-          "summary": "Create a new user",
-          "description": "Creates a new user in the system.",
-          "requestBody": {
-            "required": true,
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of users.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NewUser"
+                  "$ref": "#/components/schemas/UserList"
                 }
               }
             }
           },
-          "responses": {
-            "201": {
-              "description": "User created successfully",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/User"
-                  }
-                }
-              }
-            },
-            "400": {
-              "description": "Invalid input"
-            },
-            "500": {
-              "description": "Internal server error"
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
-      "/api/v2/users/{userId}": {
-        "get": {
-          "summary": "Get user by ID",
-          "description": "Fetch a single user by their unique ID.",
-          "parameters": [
-            {
-              "name": "userId",
-              "in": "path",
-              "description": "ID of the user to fetch",
-              "required": true,
-              "schema": {
-                "type": "string",
-                "example": "123"
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "User found",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/User"
-                  }
-                }
-              }
-            },
-            "404": {
-              "description": "User not found"
-            },
-            "500": {
-              "description": "Internal server error"
-            }
-          }
+      "post": {
+        "summary": "Create a new user",
+        "description": "Creates a new user in the system.",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/NewUserBody"
         },
-        "put": {
-          "summary": "Update user by ID",
-          "description": "Updates the details of an existing user.",
-          "parameters": [
-            {
-              "name": "userId",
-              "in": "path",
-              "description": "ID of the user to update",
-              "required": true,
-              "schema": {
-                "type": "string",
-                "example": "123"
-              }
-            }
-          ],
-          "requestBody": {
-            "required": true,
+        "responses": {
+          "201": {
+            "description": "User created successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UpdateUser"
+                  "$ref": "#/components/schemas/User"
                 }
               }
             }
           },
-          "responses": {
-            "200": {
-              "description": "User updated successfully",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/User"
-                  }
-                }
-              }
-            },
-            "404": {
-              "description": "User not found"
-            },
-            "400": {
-              "description": "Invalid input"
-            },
-            "500": {
-              "description": "Internal server error"
-            }
-          }
-        },
-        "delete": {
-          "summary": "Delete user by ID",
-          "description": "Deletes a user from the system.",
-          "parameters": [
-            {
-              "name": "userId",
-              "in": "path",
-              "description": "ID of the user to delete",
-              "required": true,
-              "schema": {
-                "type": "string",
-                "example": "123"
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "User deleted successfully"
-            },
-            "404": {
-              "description": "User not found"
-            },
-            "500": {
-              "description": "Internal server error"
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
-      },
-      "/api/v2/auth/login": {
-        "post": {
-          "summary": "Login user",
-          "description": "Authenticates a user and returns a token.",
-          "requestBody": {
-            "required": true,
+      }
+    },
+    "/users/{userId}": {
+      "get": {
+        "summary": "Get user by ID",
+        "description": "Fetch a single user by their unique ID.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User found",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LoginRequest"
+                  "$ref": "#/components/schemas/User"
                 }
               }
             }
           },
-          "responses": {
-            "200": {
-              "description": "Authentication successful",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/LoginResponse"
-                  }
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update user by ID",
+        "description": "Updates the details of an existing user.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParam"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/UpdateUserBody"
+        },
+        "responses": {
+          "200": {
+            "description": "User updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
                 }
               }
-            },
-            "401": {
-              "description": "Invalid credentials"
-            },
-            "500": {
-              "description": "Internal server error"
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete user by ID",
+        "description": "Deletes a user from the system.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParam"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "User deleted successfully"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
     },
-    "components": {
-  "schemas": {
-    "User": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "example": "123"
+    "/auth/login": {
+      "post": {
+        "summary": "Login user",
+        "description": "Authenticates a user and returns a token.",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/LoginBody"
         },
-        "username": {
-          "type": "string",
-          "example": "johndoe"
-        },
-        "email": {
-          "type": "string",
-          "example": "johndoe@example.com"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "example": "2024-09-16T14:20:00Z"
-        }
-      }
-    },
-    "NewUser": {
-      "type": "object",
-      "properties": {
-        "username": {
-          "type": "string",
-          "example": "johndoe"
-        },
-        "email": {
-          "type": "string",
-          "example": "johndoe@example.com"
-        },
-        "password": {
-          "type": "string",
-          "example": "password123"
-        }
-      },
-      "required": ["username", "email", "password"]
-    },
-    "UpdateUser": {
-      "type": "object",
-      "properties": {
-        "email": {
-          "type": "string",
-          "example": "newemail@example.com"
-        },
-        "password": {
-          "type": "string",
-          "example": "newpassword123"
-        }
-      }
-    },
-    "LoginRequest": {
-      "type": "object",
-      "properties": {
-        "username": {
-          "type": "string",
-          "example": "johndoe"
-        },
-        "password": {
-          "type": "string",
-          "example": "password123"
-        }
-      },
-      "required": ["username", "password"]
-    },
-    "LoginResponse": {
-      "type": "object",
-      "properties": {
-        "token": {
-          "type": "string",
-          "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-        },
-        "expiresIn": {
-          "type": "integer",
-          "example": 3600
+        "responses": {
+          "200": {
+            "description": "Authentication successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       }
     }
   },
-  "securitySchemes": {
-    "bearerAuth": {
-      "type": "http",
-      "scheme": "bearer",
-      "bearerFormat": "JWT"
+  "components": {
+    "parameters": {
+      "PageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "Page number for pagination",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        }
+      },
+      "LimitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "Number of items per page",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "UserIdParam": {
+        "name": "userId",
+        "in": "path",
+        "description": "ID of the user",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "requestBodies": {
+      "NewUserBody": {
+        "description": "User to add to the system",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/NewUser"
+            }
+          }
+        }
+      },
+      "UpdateUserBody": {
+        "description": "User details to update",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UpdateUser"
+            }
+          }
+        }
+      },
+      "LoginBody": {
+        "description": "User credentials for login",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/LoginRequest"
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "UserList": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/UserProfile"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UserProfile": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "address": {
+            "$ref": "#/components/schemas/Address"
+          }
+        }
+      },
+      "Address": {
+        "type": "object",
+        "properties": {
+          "street": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          }
+        }
+      },
+      "NewUser": {
+        "type": "object",
+        "required": ["username", "email", "password"],
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "format": "password"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/UserProfile"
+          }
+        }
+      },
+      "UpdateUser": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "format": "password"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/UserProfile"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["username", "password"],
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string",
+            "format": "password"
+          }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "expiresIn": {
+            "type": "integer"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "currentPage": {
+            "type": "integer"
+          },
+          "totalPages": {
+            "type": "integer"
+          },
+          "totalItems": {
+            "type": "integer"
+          },
+          "itemsPerPage": {
+            "type": "integer"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
     }
   }
 }
-
-  }
-  

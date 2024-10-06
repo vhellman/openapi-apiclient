@@ -10,7 +10,9 @@
   },
   "scripts": {
     "build": "tsc",
-    "start": "pnpm run build && node dist/main.js -i http://localhost:8080/v3/api-docs -o ./__generated__"
+    "generate": "node dist/main.js",
+    "start": "pnpm run build && node dist/main.js -i http://localhost:8080/v3/api-docs -o ./__generated__",
+    "test": "vitest"
   },
   "repository": {
     "type": "git",
@@ -18,16 +20,21 @@
   },
   "dependencies": {
     "node-fetch": "^3.3.2",
-    "yargs": "^17.7.2",
-    "zod": "^3.23.8"
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@types/yargs": "^17.0.33",
     "openapi-types": "^12.1.3",
     "ts-node": "^10.9.2",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.2"
   },
-  "keywords": [],
+  "keywords": [
+    "OpenAPI",
+    "API client",
+    "Zod",
+    "TypeScript"
+  ],
   "author": "Viktor Hellman",
   "license": "ISC"
 }
