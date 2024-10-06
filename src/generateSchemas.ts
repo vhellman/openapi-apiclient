@@ -1,5 +1,4 @@
 import { OpenAPIV3 } from "openapi-types";
-import zod from "zod";
 
 function generateZodSchemas(spec: OpenAPIV3.Document): string {
   const components = spec.components?.schemas || {};
@@ -17,9 +16,10 @@ function generateZodSchemas(spec: OpenAPIV3.Document): string {
 
   // Perform topological sort
   const sortedSchemaNames = topologicalSort(dependencyGraph);
+  const reverserSchemaNames = sortedSchemaNames.reverse();
 
   // Now generate schemas in sorted order
-  for (const name of sortedSchemaNames) {
+  for (const name of reverserSchemaNames) {
     const schema = components[name];
     const zodSchema = convertToZodSchema(
       schema as OpenAPIV3.SchemaObject,
